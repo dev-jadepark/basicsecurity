@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -80,6 +81,27 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .tokenValiditySeconds(3600)     //1시간
                 .userDetailsService(userDetailsService);
 
+        http
+                .sessionManagement()
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(false);
+        //This session has been expired (possibly due to multiple concurrent logins being attempted as the same user).
+
+        http
+                .sessionManagement()
+                .sessionFixation().changeSessionId();   //none으로 하면 쿠키공격받을때 치명적이다 -> (세션고정공격), changeSessionId가 기본값
+
+        http
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
+
+        /*
+        Always          스프링 시큐리티가 항상 세션 생성
+        If_Required     필요시 생성(기본값)
+        Never           생성하지는 않지만 이미 존재하면 사용
+        Stateless       생성하지않고 존재해도 사용하지 않음 -> JWT인증방식의 경우 사용한다.
+         */
+
         /*
         http.formLogin()    //Form 로그인 인증 기능이 작동함
                 .loginPage("/login.html")               //사용자 정의 로그인페이지
@@ -108,6 +130,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .tokenValiditySeconds(3600)                     //default는 14일
                 .alwaysRemember(true)                           //rememberMe기능이 활성화되지 않아도 항상 실행
                 .userDetailsService(userDetailsService())
+
+         */
+
+        /*
+        http.sessionManagement()    //세션관리기능이 작동
+                .maximumSessions(1) //최대 허용 가능 세션수, -1 : 무제한 로그인 세션 허용
+                .maxSessionsPreventsLogin(true) //동시 로그인차단, false인 경우 기존 세션 만료(default)
+                .expiredUrl("/expired") //세션만료경우 이동할 페이지
+                ;
+
+        http
+                .sessionManagement()
+                .sessionFixation().changeSessionId(); //서블릿3.1이상인경우, 이하인경우는 migrateSession
 
          */
     }
