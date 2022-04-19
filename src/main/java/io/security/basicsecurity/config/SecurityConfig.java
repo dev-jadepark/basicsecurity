@@ -2,6 +2,7 @@ package io.security.basicsecurity.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -27,6 +28,27 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    //인메모리방식
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.inMemoryAuthentication().withUser("user").password("{noop}1111").roles("USER");
+        auth.inMemoryAuthentication().withUser("sys").password("{noop}1111").roles("SYS");
+        auth.inMemoryAuthentication().withUser("admin").password("{noop}1111").roles("ADMIN");
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .antMatchers("/user").hasRole("USER")
+                .antMatchers("/admin/pay").hasRole("ADMIN")
+                .antMatchers("/admin/**").access("hasRole('ADMIN') or hasRole('SYS')")
+                .anyRequest().authenticated();
+        http
+                .formLogin();
+    }
+
+    /*
     @Override
     protected void configure(HttpSecurity http) throws Exception {  //configure 메서드를 오버라이딩 한다.
         http
@@ -95,6 +117,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
 
+        http
+                .antMatcher("/shop/**")
+                .authorizeRequests()
+                .antMatchers("/shop/login","/shop/users/**").permitAll()
+                .antMatchers("/shop/mypage").hasRole("USER")
+                .antMatchers("/shop/admin/pay").access("hasRole('ADMIN')")  //구체적 경로
+                .antMatchers("/shop/admin/**").access("hasRole('ADMIN') or hasRole('SYS ')")    //큰범위 경로
+                .anyRequest().authenticated();  //상기 외의 모든 요청에는 인증이 되어야만 접근 가능하다는 메서드
+
+    }
+        //주의사항 - 설정 시 구체적인 경로가 먼저오고 그것보다 큰 범위의 경로가 뒤에 오도록 해야한다.
+        //anonymous()는 익명사용자 role이 별도로 부여되는 것이므로 ROLE_USER도 접근은 불가능함, permit 필요하다.
+
+
+         */
+
         /*
         Always          스프링 시큐리티가 항상 세션 생성
         If_Required     필요시 생성(기본값)
@@ -145,5 +183,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionFixation().changeSessionId(); //서블릿3.1이상인경우, 이하인경우는 migrateSession
 
          */
-    }
+
+        /*
+        인가 API 권한설정
+        (1) 선언적방식
+            -url방식
+            -method방식
+        (2) 동적방식 (DB연동프로그래밍)
+         */
+
 }
